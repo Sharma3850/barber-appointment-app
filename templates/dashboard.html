@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navbar -->
+        <nav class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="shrink-0 flex items-center">
+                            <img class="h-8 w-8" src="https://via.placeholder.com/50" alt="Logo">
+                            <span class="ml-2 text-xl font-bold">Barber Dashboard</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="ml-4 flex items-center md:ml-6">
+                            <button class="p-1 rounded-full text-gray-600 hover:text-gray-800" id="notification-button">
+                                <span class="sr-only">View notifications</span>
+                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-5-5.917V4a2 2 0 10-4 0v1.083A6.002 6.002 0 004 11v3.159c0 .538-.214 1.055-.595 1.437L2 17h5m3 0v1a3 3 0 006 0v-1m-6 0h6">
+                                    </path>
+                                </svg>
+                            </button>
+                            <div class="ml-3 relative">
+                                <div>
+                                    <button
+                                        class="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none"
+                                        id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                        <img class="h-8 w-8 rounded-full" src="https://via.placeholder.com/50"
+                                            alt="User avatar">
+                                    </button>
+                                </div>
+                                <!-- Dropdown Menu -->
+                                <div id="user-menu"
+                                    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 hidden"
+                                    role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button">
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        role="menuitem">Profile</a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        role="menuitem">Change Password</a>
+                                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        role="menuitem">Logout</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="flex-grow w-full md:w-4/5 lg:w-3/5 max-w-screen-lg mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <!-- Upcoming Appointments -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4">Upcoming Appointments</h2>
+                    <ul id="appointments-list">
+                        <!-- Appointments will be dynamically added here -->
+                    </ul>
+                </div>
+
+                <!-- Services Offered -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4">Services Offered</h2>
+                    <ul>
+                        <li class="mb-4">
+                            <div class="flex justify-between">
+                                <span>Haircut</span>
+                                <span>₹40</span>
+                            </div>
+                        </li>
+                        <li class="mb-4">
+                            <div class="flex justify-between">
+                                <span>Shave</span>
+                                <span>₹30</span>
+                            </div>
+                        </li>
+                        <!-- Additional services can be added here -->
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6">
+                <a href="/book_appointment" class="w-full bg-blue-500 text-white py-2 rounded text-center block">Book
+                    Appointment</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle user menu
+        document.getElementById('user-menu-button').addEventListener('click', function () {
+            document.getElementById('user-menu').classList.toggle('hidden');
+        });
+
+        async function loadAppointments() {
+            const response = await fetch('/api/appointments');
+            const appointments = await response.json();
+            const appointmentsList = document.getElementById('appointments-list');
+            appointmentsList.innerHTML = '';
+
+            appointments.forEach(appointment => {
+                const li = document.createElement('li');
+                li.className = 'mb-4 p-4 bg-gray-100 rounded-lg';
+                li.innerHTML = `
+                    <div class="flex justify-between">
+                        <span>${appointment.client_name}</span>
+                        <span>${appointment.date_time}</span>
+                    </div>
+                    <div>Service: ${appointment.service}</div>
+                `;
+                appointmentsList.appendChild(li);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAppointments);
+    </script>
+</body>
+
+</html>

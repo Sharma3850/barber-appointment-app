@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .time-slot {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .time-slot.selected {
+            background-color: #3182ce;
+            color: white;
+        }
+
+        #book-button[disabled] {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="min-h-screen flex flex-col justify-center items-center">
+        <div class="w-full max-w-md bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">Book an Appointment</h2>
+            <form id="book-appointment-form">
+                <div class="mb-4">
+                    <label for="date" class="block text-gray-700">Date</label>
+                    <input type="date" id="date" name="date" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700">Services</label>
+                    <div>
+                        <label>
+                            <input type="checkbox" name="service" value="Haircut" data-time="30">
+                            Haircut (30 mins)
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" name="service" value="Shave" data-time="20">
+                            Shave (20 mins)
+                        </label>
+                    </div>
+                    <!-- Additional services can be added here -->
+                </div>
+                <button type="button" id="show-availabilities" class="w-full bg-blue-500 text-white py-2 rounded mb-4">Show Availabilities</button>
+                <div id="time-slots" class="mb-4 hidden">
+                    <label class="block text-gray-700">Available Time Slots</label>
+                    <div id="time-slot-container">
+                        <!-- Time slots will be dynamically added here -->
+                    </div>
+                </div>
+                <button type="submit" id="book-button" class="w-full bg-blue-500 text-white py-2 rounded" disabled>Book Appointment</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+        });
+
+        document.getElementById('show-availabilities').addEventListener('click', loadTimeSlots);
+
+        async function loadTimeSlots() {
+            const date = document.getElementById('date').value;
+            const selectedServices = Array.from(document.querySelectorAll('input[name="service"]:checked'));
+
+            if (selectedServices.length === 0) {
+                document.getElementById('time-slots').classList.add('hidden');
+                return;
+            }
+
+            const totalDuration = selectedServices.reduce((total, service) => {
+                return total + parseInt(service.getAttribute('data-time'));
+            }, 0);
+
+            const response = await fetch('/api/available_slots', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    date: date,
+                    duration: totalDuration
+                })
+            });
+
+            const availableSlots = await response.json();
+            const timeSlotContainer = document.getElementById('time-slot-container');
+            timeSlotContainer.innerHTML = '';
+
+            availableSlots.forEach(slot => {
+                const div = document.createElement('div');
+                div.className = 'time-slot';
+                div.textContent = slot;
+                div.addEventListener('click', () => {
+                    document.querySelectorAll('.time-slot').forEach(ts => ts.classList.remove('selected'));
+                    div.classList.add('selected');
+                    document.getElementById('book-button').disabled = false;
+                });
+                timeSlotContainer.appendChild(div);
+            });
+
+            document.getElementById('time-slots').classList.remove('hidden');
+        }
+
+        document.getElementById('book-appointment-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            // Assuming the client name is retrieved from the session
+            const clientName = await getClientNameFromSession();
+            const date = document.getElementById('date').value;
+            const selectedServices = Array.from(document.querySelectorAll('input[name="service"]:checked')).map(
+                service => service.value
+            );
+            const selectedSlot = document.querySelector('.time-slot.selected').textContent;
+
+            const response = await fetch('/api/book_appointment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    client_name: clientName,
+                    date: date,
+                    time: selectedSlot,
+                    services: selectedServices
+                })
+            });
+
+            if (response.ok) {
+                alert('Appointment booked successfully!');
+                window.location.href = '/';
+            } else {
+                alert('Failed to book appointment.');
+            }
+        });
+
+        async function getClientNameFromSession() {
+            // Make an API call to get the client name from the session
+            const response = await fetch('/api/get_client_name');
+            const data = await response.json();
+            return data.client_name;
+        }
+    </script>
+</body>
+
+</html>
